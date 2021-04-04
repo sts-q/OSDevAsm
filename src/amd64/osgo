@@ -1,0 +1,115 @@
+#! /bin/bash
+
+#----------------------------------------------------------------------------
+
+# osgo                                 Build and start OSDev
+
+#----------------------------------------------------------------------------
+# assist
+
+headline () { echo "-------  "$1; }
+
+error () { echo "#######  " $1 ; exit 1; }
+
+
+#----------------------------------------------------------------------------
+# build
+
+copy () {
+       headline "copy"
+       rm work/*
+       cp multiboot.asm    work
+       cp display.asm      work
+}
+
+
+assemble () {
+       headline "assemble"
+       cd work
+           nasm  -f elf64  -g   multiboot.asm
+       cd ..
+}
+
+
+
+linking () {
+       headline "linking"
+       LDFLAGS=' -z max-page-size=0x1000   --warn-common   --strip-all  '
+       cd work
+               ld $LDFLAGS   -o osdevasm.elf  -T ../linker.ld  *.o
+       cd ..
+}
+
+
+iso () {
+       headline "iso"
+       cd iso
+               test -e osdev.iso  &&  rm osdev.iso
+               grub2-mkrescue  -o osdev.iso  .
+       cd ..
+}
+
+
+build-iso () {
+       copy
+       assemble
+       linking
+       test -e work/osdevasm.elf  ||  error "No kernel found."
+       mv  work/osdevasm.elf  iso/boot
+       iso
+}
+
+#----------------------------------------------------------------------------
+# start
+
+start-qemu () {
+       qemu-system-x86_64  -m 16  -cdrom  iso/osdev.iso
+}
+
+
+start-vbox () {
+       VBoxManage startvm   osdevasm
+}
+
+
+restart-vbox () {
+       VBoxManage controlvm osdevasm poweroff
+       sleep 1
+       VBoxManage startvm   osdevasm
+}
+#----------------------------------------------------------------------------
+# help
+
+print-help () {
+cat <<EOF
+=======  minal-go
+options:
+EOF
+       PAREN=') '
+       grep ' -.*'$PAREN osgo
+       
+}
+
+#----------------------------------------------------------------------------
+# commands
+
+command=$1
+case $command in
+
+       -mm)    build-iso                       # Build new iso.
+               ;;
+       -sq)    start-qemu                      # Start iso with qemu.
+               ;;
+       -svb)   start-vbox                      # Start iso with VirtualBox.
+               ;;
+       -iter)  build-iso; restart-vbox         # Stop running, start new VM.
+               ;;
+       *)      print-help                      # Print this text.
+               ;;
+
+esac
+
+
+#----------------------------------------------------------------------------
+# end
+
