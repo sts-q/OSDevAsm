@@ -36,7 +36,7 @@ $(KERNEL): $(OBJECTS)
 cdrom:
 	$(generating) '$@'
 	mv $(KERNEL) $(BOOTLOADER_PATH)/iso/boot/
-	grub-mkrescue -o $(MULTIBOOT_IMAGE) $(BOOTLOADER_PATH)/iso/
+	grub2-mkrescue -o $(MULTIBOOT_IMAGE) $(BOOTLOADER_PATH)/iso/
 
 run:
 	qemu-system-x86_64 -cdrom $(MULTIBOOT_IMAGE) -m 16
