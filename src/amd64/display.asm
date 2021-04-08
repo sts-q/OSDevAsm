@@ -5,30 +5,32 @@
 ;============================================================================
 ; :chapter:   display
 
-%macro clear_screen 1
-               mov eax, %1
+;------------------------------------------
+%macro clear_screen 0 ; ( -- )
                call clear_screenF
                %endmacro
-clear_screenF: ; ( attr -- )
-               shl eax, 8
-               mov [vga_attr], eax
-               mov ebx, vga_mem
-
+clear_screenF: 
+               mov eax, vga_mem
+               mov ebx, [vga_attr]
                mov ecx, 2000
        .loop:
-               mov [ebx], ax
-               add ebx, 2
+               mov [eax], bx
+               add eax, 2
                dec ecx
                cmp ecx, 0
                jnz             .loop
                ret
 
 
-%macro cprint 1
+;------------------------------------------
+%macro cprint 1-* ; ( chr -- )
+       %rep %0
                mov eax, %1
                call cprintF
-               %endmacro
-cprintF:  ; ( chr -- )
+       %rotate 1
+       %endrep
+%endmacro
+cprintF:  
                push rax
                mov eax, [vga_line]
                mov ebx, 80
@@ -43,23 +45,76 @@ cprintF:  ; ( chr -- )
                ret
 
 
-%macro spc 0
+%macro spc 0  ; ( -- )
                cprint 32
                %endmacro
 
 
+;------------------------------------------
+%macro printat 2  ; ( line col -- )
+               mov eax, %1
+               mov ebx, %2
+               call printatF
+               %endmacro
+printatF:
+               mov [vga_line], eax
+               mov [vga_col],  ebx
+               ret
+
+
+;------------------------------------------
+printattrF:
+               shl eax, 8
+               mov [vga_attr], eax
+               ret
+%macro ink_std 0
+               mov eax, 0x1f
+               call printattrF
+               %endmacro
+%macro ink_headline 0
+               mov eax, 0x2a
+               call printattrF
+               %endmacro
+%macro ink_comment 0
+               mov eax, 0x17
+               call printattrF
+               %endmacro
+%macro ink_error 0
+               mov eax, 0x50
+               call printattrF
+               %endmacro
+
+               
+;------------------------------------------
+%macro abc 0
+               call abcF
+               %endmacro
 abcF:
+               printat 0, 20
                cprint 65
                cprint 66
-
-               mov eax, 0x2a00
-               mov [vga_attr], eax
+               ink_headline
                cprint 67
                spc
                cprint 67
-               mov eax, 0x1f00
-               mov [vga_attr], eax
+               cprint 67
+               spc
+               cprint 67
+               ink_std
+               cprint 66
+               cprint 65
 
+               printat 24, 20
+               cprint 65
+               cprint 66
+               ink_comment
+               cprint 67
+               spc
+               cprint 67
+               cprint 67
+               spc
+               cprint 67
+               ink_std
                cprint 66
                cprint 65
                ret
@@ -68,8 +123,9 @@ abcF:
 ;============================================================================
 
 main:
-               clear_screen 0x1F               ; white on blue
-               call abcF
+               ink_std
+               clear_screen  
+               abc
                ret
 
 ;============================================================================

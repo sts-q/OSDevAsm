@@ -80,6 +80,10 @@ restart-vbox () {
 #----------------------------------------------------------------------------
 # help
 
+list-macros () {
+       egrep  -n  '^%macro ' *;
+       }
+
 print-help () {
 cat <<EOF
 =======  minal-go
@@ -103,6 +107,8 @@ case $command in
        -svb)   start-vbox                      # Start iso with VirtualBox.
                ;;
        -iter)  build-iso; restart-vbox         # Stop running, start new VM.
+               ;;
+       -lm)    list-macros
                ;;
        *)      print-help                      # Print this text.
                ;;

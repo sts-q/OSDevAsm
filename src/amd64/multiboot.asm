@@ -113,7 +113,7 @@ multiboot_entry:
 bits 64
 _64_bits:
 ;;;     call osdevasm_main              ; calling the kernel
-        call main
+        call main                       ; calling main:  display.asm
 
 hang:
         hlt                             ; something bad happened, machine halted
@@ -170,9 +170,13 @@ kernel_stack_size:
 
 
 vga_mem:                       equ 0xb8000
-vga_line:                      dd 10
-vga_col:                       dd 15
-vga_attr:                      dd 0                    ; vga_attr := attr << 8
+vga_line:                      dd 0
+vga_col:                       dd 0
+vga_attr:                      dd 0                    ; vga_attr := attr << 8  -->  bx := chr+attr; vga[]:=bx
 
+kbd_buffer:                    db 64
+kbd_buffer_end:
 
+kbd_read_ptr:                  dd 0
+kbd_write_ptr:                 dd 0
 
