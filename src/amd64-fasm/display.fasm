@@ -1,0 +1,130 @@
+;============================================================================
+
+; :file:   display.fasm
+
+;============================================================================
+
+macro app [ cmd ] { cmd }
+
+;------------------------------------------
+macro clear_screen { call clear_screenF }
+clear_screenF: 
+               mov eax, vga_mem
+               mov ebx, [vga_attr]
+               mov ecx, 2000
+       .loop:
+               mov [eax], bx
+               add eax, 2
+               dec ecx
+               cmp ecx, 0
+               jnz             .loop
+
+               ret
+
+
+;------------------------------------------
+macro cprint [ chr ] {
+               mov eax, chr
+               call cprintF
+}
+
+cprintF:
+               push rax
+               mov eax, [vga_line]
+               mov ebx, 80
+               imul ebx
+               add eax, [vga_col]
+               shl eax, 1
+               add eax, vga_mem
+               pop rbx
+               add ebx, [vga_attr]
+               mov [eax], bx
+               inc dword [vga_col]
+               ret
+
+
+macro spc { cprint 32 }
+
+
+;------------------------------------------
+macro print_at line,col {
+               mov eax, line
+               mov ebx, col
+               call printatF
+}
+
+printatF:
+               mov [vga_line], eax
+               mov [vga_col],  ebx
+               ret
+
+
+;------------------------------------------
+printattrF:
+               shl eax, 8
+               mov [vga_attr], eax
+               ret
+
+macro ink_std {
+               mov eax, 0x1f
+               call printattrF
+}
+
+macro ink_headline {
+               mov eax, 0x2a
+               call printattrF
+}
+
+macro ink_comment {
+               mov eax, 0x17
+               call printattrF
+}
+
+macro ink_error {
+               mov eax, 0x50
+               call printattrF
+}
+
+               
+;------------------------------------------
+macro abc { call abcF }
+abcF:
+               print_at 0, 20
+               cprint 65
+               cprint 66
+               ink_headline
+               cprint 67
+               spc
+               cprint 67
+               cprint 67
+               spc
+               cprint 67
+               ink_std
+               cprint 66
+               cprint 65
+
+               app <print_at 12,30>, ink_headline
+               cprint 32,'[',32,32, 'F',32, 'A',32, 'S',32,  'M',32,32,  ']',32
+
+               app <print_at 24, 20>, ink_std
+               cprint 65
+               cprint 66
+               ink_comment
+               cprint 67
+               spc
+               cprint 67
+               cprint 67
+               spc
+               cprint 67
+               ink_std
+               cprint 66
+               cprint 65
+               ret
+
+
+;============================================================================
+
+main:          app  ink_std, clear_screen, abc
+               ret
+
+;============================================================================
